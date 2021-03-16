@@ -3,6 +3,6 @@
 int MyPrintf (char* s, ...);
 
 int main() {
-    MyPrintf ("I love %x and %d %s\n", 3802, 1234, "chocolates");
+    MyPrintf ("I %s %x %d%%%c%b\n", "love", 3802, 100, 33, 255);
     return 0;
 }

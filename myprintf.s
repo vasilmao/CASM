@@ -2,14 +2,13 @@
 section .text
 
 global MyPrintf
-
-;PrintfStr       db "SubFunc(): %d - %d = %d", 0dh, 0ah, 0
-
-;------------------------------------------------
+extern printf
 
 MyPrintf:
 
-    push rbp
+    pop rax
+    mov [ret_adres]s, rax
+    xor rax, rax
 
     push r9
     push r8
@@ -19,17 +18,24 @@ MyPrintf:
     push rdi
 
     call PrintF
-    pop rax
-    pop rax
-    pop rax
-    pop rax
-    pop rax
-    pop rax
 
-    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+
+    xor rax, rax
+    call printf
+
+    push qword [ret_adress]
+
     ret
-    ;===============================================================================
-    ;changes: rax, rsi, rdi, rdx, rcx
+
+
+;===============================================================================
+;changes: rax, rsi, rdi, rdx, rcx
 ;===============================================================================
 FlushBuffer:
     cmp qword [BufferSize], 0
@@ -160,8 +166,9 @@ WriteNumToBufferBin:
 ;         + WriteNumToBuffer + WriteNumToBufferBin
 ;===============================================================================
 PrintF:
+    push rbp
     mov rbp, rsp
-    add rbp, 8
+    add rbp, 16
     xor r8, r8 ; format string iterator
     mov r9, 8  ; argument iterator
     PrintFLoop:
@@ -175,6 +182,7 @@ PrintF:
         inc r8
         inc rbx
         xor rax, rax
+        ; [rbx] - символ
         mov al, [rbx]
         shl rax, 3
         add rax, SwitchTable
@@ -243,6 +251,8 @@ PrintF:
 
     PrintExit:
     call FlushBuffer
+    pop rbp
+    ;jmp TrampolineEnd
     ret
 
 
@@ -261,7 +271,16 @@ SwitchTable:
              dq PrintHexNumber
     times 7  dq PrintProcentWithSymbol
 
-
+SwitchTable1:
+             dq PrintBinaryNumber
+             dq PrintChar
+             dq PrintDecimalNumber
+    times 10 dq PrintProcentWithSymbol
+             dq PrintOctalNumber
+    times 3  dq PrintProcentWithSymbol
+             dq PrintArgString
+    times 4  dq PrintProcentWithSymbol
+             dq PrintHexNumber
 
 section     .data
 
@@ -269,3 +288,4 @@ string_end      equ 0x00
 max_buffer_size equ 512
 OutBuffer:  times 512 db  0
 BufferSize:           dq  0
+ret_adress: dq 0
