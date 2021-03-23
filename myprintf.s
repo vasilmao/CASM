@@ -7,7 +7,7 @@ extern printf
 MyPrintf:
 
     pop rax
-    mov [ret_adres]s, rax
+    mov [ret_adress], rax
     xor rax, rax
 
     push r9
@@ -181,9 +181,14 @@ PrintF:
         jne PrintUsualSymbol
         inc r8
         inc rbx
-        xor rax, rax
         ; [rbx] - символ
+        xor rax, rax
         mov al, [rbx]
+        cmp al, 'b'
+        jb PrintUsualSymbol
+        cmp al, 'x'
+        ja PrintUsualSymbol
+        sub rax, 'b'
         shl rax, 3
         add rax, SwitchTable
         jmp qword [rax]
@@ -257,9 +262,6 @@ PrintF:
 
 
 SwitchTable:
-    times 37 dq PrintProcentWithSymbol
-             dq PrintProcent
-    times 60 dq PrintProcentWithSymbol
              dq PrintBinaryNumber
              dq PrintChar
              dq PrintDecimalNumber
