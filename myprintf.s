@@ -27,7 +27,7 @@ MyPrintf:
     pop r9
 
     xor rax, rax
-    call printf
+    ; call printf
 
     push qword [ret_adress]
 
@@ -124,6 +124,22 @@ WriteNumToBuffer:
 		jne BuffNumLoop
 	ret
 
+WriteNumToBufferSigned:
+    xor rdx, rdx
+    xor rdi, rdi ; counter
+    cmp eax, 0d
+    jl WriteMinus
+    jmp AfterMinus
+    WriteMinus:
+    push rax
+    mov rax, '-'
+    call WriteCharToBuffer
+    pop rax
+    neg eax
+    AfterMinus:
+    call WriteNumToBuffer
+	ret
+
 ;===============================================================================
 ;args: rax - num, rbx - base from 1 to 4 (means 2^1, 2^2, 2^3, 2^4)
 ;changes: rdx, rdi, rcx + WriteDigitToBuffer
@@ -150,11 +166,37 @@ WriteNumToBufferBin:
 		jne BuffNumBinLoop
 	ret
 
-%macro PrintBinNumber 1
-    mov rax, [rbp+r9]
-    push rbx
-    mov rbx, %1
+WriteNumToBufferBinSigned:
+    xor rdx, rdx
+    xor rdi, rdi ; counter
+    cmp eax, 0d
+    jl WriteMinusBinSigned
+    jmp AfterMinusBinSigned
+    WriteMinusBinSigned:
+    push rax
+    mov rax, '-'
+    call WriteCharToBuffer
+    pop rax
+    neg eax
+    AfterMinusBinSigned:
     call WriteNumToBufferBin
+    ret
+
+%macro PrintBinNumber 1
+
+    push rbx
+    cmp byte [rbx+1], 'u'
+    je GoUnsignedBin%1
+    mov rbx, %1
+    mov rax, [rbp+r9]
+    call WriteNumToBufferBinSigned
+    jmp EndDecBin%1
+    GoUnsignedBin%1:
+    mov rbx, %1
+    mov rax, [rbp+r9]
+    call WriteNumToBufferBin
+    inc r8
+    EndDecBin%1:
     pop rbx
     add r9, 8
     jmp SymbolPrintEnd
@@ -234,10 +276,21 @@ PrintF:
 
 
         PrintDecimalNumber:
-        mov rax, [rbp+r9]
+        ;mov rax, [rbp+r9]
+        ;add r9, 8
         push rbx
+        cmp byte [rbx+1], 'u'
+        je GoUnsigned
         mov rbx, 10
+        mov rax, [rbp+r9]
+        call WriteNumToBufferSigned
+        jmp EndDec
+        GoUnsigned:
+        mov rbx, 10
+        mov rax, [rbp+r9]
         call WriteNumToBuffer
+        inc r8
+        EndDec:
         pop rbx
         add r9, 8
         jmp SymbolPrintEnd
